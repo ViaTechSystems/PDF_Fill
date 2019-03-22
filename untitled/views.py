@@ -3,7 +3,7 @@ from io import BytesIO
 import PyPDF2
 from django.http import HttpResponse
 
-from PyPDF2.generic import BooleanObject, NameObject, IndirectObject
+from PyPDF2.generic import BooleanObject, NameObject, IndirectObject, NumberObject
 
 
 def pdf(request):
@@ -41,8 +41,16 @@ def pdf(request):
     }
 
     pdf_writer.addPage(pdf_reader.getPage(0))
-    pdf_writer.updatePageFormFieldValues(pdf_writer.getPage(0), data_dict)
-
+    page = pdf_writer.getPage(0)
+    pdf_writer.updatePageFormFieldValues(page, data_dict)
+    for j in range(0, len(page['/Annots'])):
+        writer_annot = page['/Annots'][j].getObject()
+        for field in data_dict:
+            # BOOYAH!
+            if writer_annot.get('/T') == field:
+                writer_annot.update({
+                    NameObject("/Ff"): NumberObject(1)
+                })
     output_stream = BytesIO()
     pdf_writer.write(output_stream)
 
